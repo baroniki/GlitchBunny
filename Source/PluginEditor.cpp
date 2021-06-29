@@ -11,15 +11,39 @@
 
 //==============================================================================
 GlitchBunnyAudioProcessorEditor::GlitchBunnyAudioProcessorEditor (GlitchBunnyAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p), 
-    label_mix("Mix Label", "Mix"), label_time("Time Label", "Time"), label_feedback("Feedback Label", "Feedback"), label_rand("Random Label", "Randomness")
+    : AudioProcessorEditor (&p), audioProcessor (p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
+    InitLabels();
+    InitSliders();
+
     for (auto* comp : GetGUIComponents()) {
         addAndMakeVisible(comp);
     }
     setSize (800, 500);
+}
+
+void GlitchBunnyAudioProcessorEditor::InitLabels() {
+    auto sliders = GetSliders();
+
+    label_mix.setText("Mix", juce::NotificationType::dontSendNotification);
+    label_mix.attachToComponent(sliders[0], false);
+
+    label_time.setText("Time", juce::NotificationType::dontSendNotification);
+    label_time.attachToComponent(sliders[1], false);
+
+    label_feedback.setText("Feedback", juce::NotificationType::dontSendNotification);
+    label_feedback.attachToComponent(sliders[2], false);
+
+    label_rand.setText("Randomness", juce::NotificationType::dontSendNotification);
+    label_rand.attachToComponent(sliders[3], false);
+}
+
+void GlitchBunnyAudioProcessorEditor::InitSliders() {
+    for (auto* slider : GetSliders()) {
+        slider->setLookAndFeel(&lf);
+    }
 }
 
 GlitchBunnyAudioProcessorEditor::~GlitchBunnyAudioProcessorEditor()
@@ -34,7 +58,7 @@ std::vector<juce::Component*> GlitchBunnyAudioProcessorEditor::GetGUIComponents(
     };
 }
 
-std::vector<RotarySlider*> GlitchBunnyAudioProcessorEditor::GetSliders()
+std::vector<CustomSlider*> GlitchBunnyAudioProcessorEditor::GetSliders()
 {
     return {
         &slider_mix, &slider_time, &slider_feedback, &slider_rand
@@ -49,13 +73,13 @@ void GlitchBunnyAudioProcessorEditor::paint (juce::Graphics& g)
 
     auto bounds = getLocalBounds();
 
-    auto bunny_area = bounds.removeFromTop(bounds.getHeight() * 0.75);
+    auto bunny_area = bounds.removeFromTop(bounds.getHeight() * 0.8);
 
-    g.setColour(juce::Colours::green);
+    g.setColour(juce::Colours::white);
     g.drawHorizontalLine(bunny_area.getHeight(), 0.f, bunny_area.getWidth());
     
-    juce::ColourGradient knobs_background{  juce::Colours::green.withAlpha(0.5f), { 0.f, 0.f }, 
-                                            juce::Colours::green.withAlpha(0.2f), { (float) bounds.getWidth(), (float) bounds.getHeight() }, 
+    juce::ColourGradient knobs_background{  juce::Colours::white.withAlpha(0.5f), { 0.f, 0.f }, 
+                                            juce::Colours::white.withAlpha(0.2f), { (float) bounds.getWidth(), (float) bounds.getHeight() }, 
                                             false   };
     g.setGradientFill(knobs_background);
     g.fillRect(bounds);
@@ -68,22 +92,17 @@ void GlitchBunnyAudioProcessorEditor::resized()
 
     auto bounds = getLocalBounds();
 
-    auto bunny_area = bounds.removeFromTop(bounds.getHeight() * 0.75);
+    auto bunny_area = bounds.removeFromTop(bounds.getHeight() * 0.8);
 
-    auto comps = GetGUIComponents();
-    double comp_ctr, num_knobs = comps.size()/2;
+    auto comps = GetSliders();
+    double comp_ctr = comps.size();
 
-    for ( int i = 0; i < num_knobs; i++ ) {
-        // remove 1/5 of bounds, then 1/4, 1/3 etc... until last component
-        if (i == comps.size() - 1) {
-            comps[i + num_knobs]->setBounds(bounds.removeFromTop(bounds.getHeight() * 0.2));
+
+    for ( int i = 0; i < comps.size(); i++ ) {
+        // remove 1/4 of bounds, then 1/3, 1/2 until last component
+        if (i == comps.size() - 1)
             comps[i]->setBounds(bounds);
-        } 
-        else {
-            auto knob_bounds = bounds.removeFromLeft(bounds.getWidth() * (1 / comp_ctr--));
-            comps[i + num_knobs]->setBounds(knob_bounds.removeFromTop(knob_bounds.getHeight() * 0.2));
-            comps[i]->setBounds(knob_bounds);
-
-        }
+        else
+            comps[i]->setBounds(bounds.removeFromLeft(bounds.getWidth() * (1 / comp_ctr--)));
     }
 }
