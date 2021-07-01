@@ -20,7 +20,7 @@ public:
 
     ~Logger();
 
-    void Log(const std::string& log_msg);
+    void Log(std::string& log_msg);
 private:
     std::string log_filename;
     std::ofstream output_file;

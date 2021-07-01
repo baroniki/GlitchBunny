@@ -22,6 +22,6 @@ Logger::~Logger() {
     output_file.close();
 }
 
-void Logger::Log(const std::string& log_msg) {
+void Logger::Log(std::string& log_msg) {
     output_file << log_msg << std::endl;
 }

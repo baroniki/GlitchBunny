@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "BunnyComponent.h"
 
 //==============================================================================
 /**
@@ -72,24 +73,29 @@ public:
     void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     GlitchBunnyAudioProcessor& audioProcessor;
 
     KnobLF lf;
 
     CustomSlider slider_mix, slider_rate, slider_depth, slider_feedback, slider_center_freq;
     CustomLabel label_mix, label_rate, label_depth, label_feedback, label_center_freq;
+
+    // BunnyComponent bunny;
+    juce::ImageComponent bunny_image;
     
 
     std::vector<juce::Component*> GetGUIComponents();
     std::vector<CustomSlider*> GetSliders();
+    std::vector<juce::Label*> GetLabels();
     void InitLabels();
     void InitSliders();
 
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 
     Attachment attachment_mix, attachment_rate, attachment_depth, attachment_feedback, attachment_center_freq;
+
+    juce::Matrix3D<float> getProjectionMatrix() const;
+    juce::Matrix3D<float> getViewMatrix() const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GlitchBunnyAudioProcessorEditor)
 };

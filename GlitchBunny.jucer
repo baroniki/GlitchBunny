@@ -3,11 +3,16 @@
 <JUCERPROJECT id="qD18Ia" name="GlitchBunny" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="L7ODGv" name="GlitchBunny">
+    <GROUP id="{EA291659-B9A6-4B56-FB94-4AA6BFE55486}" name="ExternalLib">
+      <FILE id="TadNMY" name="bun_zipper.txt" compile="0" resource="1" file="ExtLib/bun_zipper.txt"/>
+    </GROUP>
     <GROUP id="{198C9644-BB78-1EE3-6E83-D4E28936593F}" name="Source">
+      <FILE id="VPfnCD" name="BunnyComponent.cpp" compile="1" resource="0"
+            file="Source/BunnyComponent.cpp"/>
+      <FILE id="takRaH" name="BunnyComponent.h" compile="0" resource="0"
+            file="Source/BunnyComponent.h"/>
       <FILE id="D4rP7F" name="Logger.h" compile="0" resource="0" file="Source/Logger.h"/>
       <FILE id="FiNazm" name="Logger.cpp" compile="1" resource="0" file="Source/Logger.cpp"/>
-      <FILE id="Fqlc8k" name="RandDelay.h" compile="0" resource="0" file="Source/RandDelay.h"/>
-      <FILE id="SnPcen" name="RandDelay.cpp" compile="1" resource="0" file="Source/RandDelay.cpp"/>
       <FILE id="QYRNFk" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="saaQsL" name="PluginProcessor.h" compile="0" resource="0"

@@ -11,7 +11,6 @@
 #include <JuceHeader.h>
 #include <random>
 
-#include "RandDelay.h"
 #include "Logger.h"
 //==============================================================================
 /**
@@ -20,8 +19,6 @@
 
 
 struct ParameterSettings {
-    /*int mix{ 0 }, feedback{ 0 }, rand{ 0 };
-    float time{ 0.f };*/
     float mix{ 0.f }, rate{ 0.f }, depth{ 0.f }, feedback{ 0.f }, center_freq{ 1000.f };
 };
 
@@ -71,20 +68,6 @@ public:
     juce::AudioProcessorValueTreeState tree_state { *this, nullptr, "Parameters", CreateParameterLayout() };
 
 private:
-    /*RandDelay delay_channel;
-
-    juce::dsp::DryWetMixer<float> mixer;
-
-    void UpdateRandDelay();*/
-
-    
-    /*int m_WritePos;
-    float m_LastFeedback;
-    juce::AudioBuffer<float> m_DelayBuffer;
-
-    void WriteDelayBuffer(int channel, juce::AudioBuffer<float>& buffer, ParameterSettings& params, const float start_gain, const float end_gain, bool copying);
-    void ReadDelayBuffer(int channel, juce::AudioBuffer<float>& buffer, ParameterSettings& params, const float start_gain, const float end_gain, const double sample_rate);*/
-
     juce::dsp::Phaser<float> m_Phaser;
 
     void UpdateParams();
