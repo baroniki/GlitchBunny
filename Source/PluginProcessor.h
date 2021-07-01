@@ -9,10 +9,23 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <random>
 
+#include "RandDelay.h"
+#include "Logger.h"
 //==============================================================================
 /**
 */
+
+
+
+struct ParameterSettings {
+    int mix{ 0 }, feedback{ 0 }, rand{ 0 };
+    float time{ 0.f };
+};
+
+ParameterSettings GetParameterSettings(const juce::AudioProcessorValueTreeState& tree_state);
+
 class GlitchBunnyAudioProcessor  : public juce::AudioProcessor
 {
 public:
@@ -53,7 +66,19 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    static juce::AudioProcessorValueTreeState::ParameterLayout CreateParameterLayout();
+    juce::AudioProcessorValueTreeState tree_state { *this, nullptr, "Parameters", CreateParameterLayout() };
+
 private:
+    using DryWetMixer = juce::dsp::DryWetMixer<float>;
+    using MonoChain = juce::dsp::ProcessorChain<DryWetMixer, RandDelay>;
+
+    RandDelay delay_channel;
+
+    void UpdateRandDelay();
+
+    
+    Logger logger;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GlitchBunnyAudioProcessor)
 };

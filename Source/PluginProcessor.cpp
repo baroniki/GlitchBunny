@@ -19,7 +19,8 @@ GlitchBunnyAudioProcessor::GlitchBunnyAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+    delay_channel(48000 * 2)
 #endif
 {
 }
@@ -95,6 +96,13 @@ void GlitchBunnyAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    juce::dsp::ProcessSpec spec{ sampleRate, samplesPerBlock, 2 };
+
+    delay_channel.reset();
+    delay_channel.prepare(spec);
+
+    UpdateRandDelay();
 }
 
 void GlitchBunnyAudioProcessor::releaseResources()
@@ -144,18 +152,41 @@ void GlitchBunnyAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    const int buffer_length = buffer.getNumSamples();
+
+
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
     // Make sure to reset the state if your inner loop is processing
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
+    UpdateRandDelay();
+
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        auto* data = buffer.getWritePointer(channel);
+        
+        for (int i = 0; i < buffer_length; ++i) {
+            delay_channel.pushSample(channel, data[i]);
+            data[i] = delay_channel.popSample(channel, GetParameterSettings(tree_state).time * getSampleRate());
+        }
 
         // ..do something to the data...
     }
+
+    
+
+ /*   juce::dsp::AudioBlock<float> block(buffer);
+
+    auto left_block = block.getSingleChannelBlock(0);
+    auto right_block = block.getSingleChannelBlock(1);
+
+    juce::dsp::ProcessContextReplacing<float> left_context(left_block);
+    juce::dsp::ProcessContextReplacing<float> right_context(right_block);
+
+    delay_channel.process(left_context);
+    delay_channel.process(right_context);*/
 }
 
 //==============================================================================
@@ -166,7 +197,8 @@ bool GlitchBunnyAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* GlitchBunnyAudioProcessor::createEditor()
 {
-    return new GlitchBunnyAudioProcessorEditor (*this);
+    //return new GlitchBunnyAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -188,4 +220,47 @@ void GlitchBunnyAudioProcessor::setStateInformation (const void* data, int sizeI
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new GlitchBunnyAudioProcessor();
+}
+
+void GlitchBunnyAudioProcessor::UpdateRandDelay() 
+{
+    auto p_settings = GetParameterSettings(tree_state);
+
+    int randomness = p_settings.rand;
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution(-randomness, randomness);
+    int rand = distribution(generator);
+
+    float rand_time = p_settings.time + (rand / 50.f);
+
+    delay_channel.setDelay(rand_time * getSampleRate());
+}
+
+ParameterSettings GetParameterSettings(const juce::AudioProcessorValueTreeState& tree_state)
+{
+    ParameterSettings p_settings;
+
+    p_settings.mix = tree_state.getRawParameterValue("Mix")->load();
+    p_settings.time = tree_state.getRawParameterValue("Time")->load();
+    p_settings.feedback = tree_state.getRawParameterValue("Mix")->load();
+    p_settings.rand = tree_state.getRawParameterValue("Randomness")->load();
+
+    return p_settings;
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout GlitchBunnyAudioProcessor::CreateParameterLayout() 
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add(std::make_unique<juce::AudioParameterInt>( "Mix", "Mix", 0, 100, 50 ));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>( "Time", "Time", 
+                                                            juce::NormalisableRange<float>(0.f, MAX_DELAY, 0.001f, 1.f), 
+                                                            1.f ));
+
+    layout.add(std::make_unique<juce::AudioParameterInt>("Feedback", "Feedback", 0, 100, 20));
+
+    layout.add(std::make_unique<juce::AudioParameterInt>("Randomness", "Randomness", 0, 100, 0));
+
+    return layout;
 }
