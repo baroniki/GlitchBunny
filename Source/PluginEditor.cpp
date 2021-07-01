@@ -11,7 +11,12 @@
 
 //==============================================================================
 GlitchBunnyAudioProcessorEditor::GlitchBunnyAudioProcessorEditor (GlitchBunnyAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), audioProcessor (p),
+    attachment_mix(audioProcessor.tree_state, "Mix", slider_mix),
+    attachment_rate(audioProcessor.tree_state, "Rate", slider_rate),
+    attachment_depth(audioProcessor.tree_state, "Depth", slider_depth),
+    attachment_feedback(audioProcessor.tree_state, "Feedback", slider_feedback),
+    attachment_center_freq(audioProcessor.tree_state, "Center Freq", slider_center_freq)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -30,14 +35,17 @@ void GlitchBunnyAudioProcessorEditor::InitLabels() {
     label_mix.setText("Mix", juce::NotificationType::dontSendNotification);
     label_mix.attachToComponent(sliders[0], false);
 
-    label_time.setText("Time", juce::NotificationType::dontSendNotification);
-    label_time.attachToComponent(sliders[1], false);
+    label_rate.setText("Rate", juce::NotificationType::dontSendNotification);
+    label_rate.attachToComponent(sliders[1], false);
+    
+    label_depth.setText("Depth", juce::NotificationType::dontSendNotification);
+    label_depth.attachToComponent(sliders[2], false);
 
     label_feedback.setText("Feedback", juce::NotificationType::dontSendNotification);
-    label_feedback.attachToComponent(sliders[2], false);
+    label_feedback.attachToComponent(sliders[3], false);
 
-    label_rand.setText("Randomness", juce::NotificationType::dontSendNotification);
-    label_rand.attachToComponent(sliders[3], false);
+    label_center_freq.setText("Center Frequency", juce::NotificationType::dontSendNotification);
+    label_center_freq.attachToComponent(sliders[4], false);
 }
 
 void GlitchBunnyAudioProcessorEditor::InitSliders() {
@@ -53,15 +61,15 @@ GlitchBunnyAudioProcessorEditor::~GlitchBunnyAudioProcessorEditor()
 std::vector<juce::Component*> GlitchBunnyAudioProcessorEditor::GetGUIComponents()
 {
     return {
-        &slider_mix, &slider_time, &slider_feedback, &slider_rand,
-        &label_mix, &label_time, &label_feedback, &label_rand
+        &slider_mix, &slider_rate, &slider_depth, &slider_feedback, &slider_center_freq,
+        &label_mix, &label_rate, &label_depth, &label_feedback, &label_center_freq
     };
 }
 
 std::vector<CustomSlider*> GlitchBunnyAudioProcessorEditor::GetSliders()
 {
     return {
-        &slider_mix, &slider_time, &slider_feedback, &slider_rand
+        &slider_mix, & slider_rate, &slider_depth, &slider_feedback, &slider_center_freq
     };
 }
 

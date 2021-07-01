@@ -20,8 +20,9 @@
 
 
 struct ParameterSettings {
-    int mix{ 0 }, feedback{ 0 }, rand{ 0 };
-    float time{ 0.f };
+    /*int mix{ 0 }, feedback{ 0 }, rand{ 0 };
+    float time{ 0.f };*/
+    float mix{ 0.f }, rate{ 0.f }, depth{ 0.f }, feedback{ 0.f }, center_freq{ 1000.f };
 };
 
 ParameterSettings GetParameterSettings(const juce::AudioProcessorValueTreeState& tree_state);
@@ -70,14 +71,24 @@ public:
     juce::AudioProcessorValueTreeState tree_state { *this, nullptr, "Parameters", CreateParameterLayout() };
 
 private:
-    using DryWetMixer = juce::dsp::DryWetMixer<float>;
-    using MonoChain = juce::dsp::ProcessorChain<DryWetMixer, RandDelay>;
+    /*RandDelay delay_channel;
 
-    RandDelay delay_channel;
+    juce::dsp::DryWetMixer<float> mixer;
 
-    void UpdateRandDelay();
+    void UpdateRandDelay();*/
 
     
+    /*int m_WritePos;
+    float m_LastFeedback;
+    juce::AudioBuffer<float> m_DelayBuffer;
+
+    void WriteDelayBuffer(int channel, juce::AudioBuffer<float>& buffer, ParameterSettings& params, const float start_gain, const float end_gain, bool copying);
+    void ReadDelayBuffer(int channel, juce::AudioBuffer<float>& buffer, ParameterSettings& params, const float start_gain, const float end_gain, const double sample_rate);*/
+
+    juce::dsp::Phaser<float> m_Phaser;
+
+    void UpdateParams();
+
     Logger logger;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GlitchBunnyAudioProcessor)

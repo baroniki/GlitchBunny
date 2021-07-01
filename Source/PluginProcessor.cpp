@@ -19,8 +19,10 @@ GlitchBunnyAudioProcessor::GlitchBunnyAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       ),
-    delay_channel(48000 * 2)
+                       )
+    /*m_WritePos(0),
+    m_LastFeedback(0.f)*/
+    //,delay_channel(48000 * 2, 20)
 #endif
 {
 }
@@ -97,12 +99,35 @@ void GlitchBunnyAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 
+    //juce::dsp::ProcessSpec spec{ sampleRate, samplesPerBlock, 2 };
+
+    //delay_channel.reset();
+    //delay_channel.prepare(spec);
+
+    //mixer.reset();
+    //mixer.prepare(spec);
+
+    //UpdateRandDelay();
+
+    /*const int num_input_channels = getTotalNumInputChannels();
+    const int delay_buffer_size = 2 * (sampleRate + samplesPerBlock);
+
+    m_DelayBuffer.setSize(num_input_channels, delay_buffer_size);*/
+
     juce::dsp::ProcessSpec spec{ sampleRate, samplesPerBlock, 2 };
 
-    delay_channel.reset();
-    delay_channel.prepare(spec);
+    m_Phaser.prepare(spec);
+    m_Phaser.reset();
+}
 
-    UpdateRandDelay();
+void GlitchBunnyAudioProcessor::UpdateParams() {
+    auto params = GetParameterSettings(tree_state);
+
+    m_Phaser.setMix(params.mix);
+    m_Phaser.setRate(params.rate);
+    m_Phaser.setDepth(params.depth);
+    m_Phaser.setFeedback(params.feedback);
+    m_Phaser.setCentreFrequency(params.center_freq);
 }
 
 void GlitchBunnyAudioProcessor::releaseResources()
@@ -155,31 +180,54 @@ void GlitchBunnyAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     const int buffer_length = buffer.getNumSamples();
 
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    UpdateRandDelay();
+     //This is the place where you'd normally do the guts of your plugin's
+     //audio processing...
+     //Make sure to reset the state if your inner loop is processing
+     //the samples and the outer loop is handling the channels.
+     //Alternatively, you can process the samples with the channels
+     //interleaved by keeping the same state.
+    //UpdateRandDelay();
 
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* data = buffer.getWritePointer(channel);
-        
-        for (int i = 0; i < buffer_length; ++i) {
-            delay_channel.pushSample(channel, data[i]);
-            data[i] = delay_channel.popSample(channel, GetParameterSettings(tree_state).time * getSampleRate());
-        }
+    //float delay_time = GetParameterSettings(tree_state).time;
+    //float delay_in_samples = delay_time * getSampleRate();
 
-        // ..do something to the data...
-    }
+    //float feedback = GetParameterSettings(tree_state).feedback;
+    //float adjusted_feedback = feedback / 5.0;
+
+    //
+
+    //for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    //{
+    //    auto* channel_data = buffer.getWritePointer(channel);
+    //    float delay_data;
+    //    
+    //    for (int i = 0; i < buffer_length; ++i) {
+    //        delay_channel.pushSample(channel, channel_data[i]);
+    //        delay_data = delay_channel.popSample(channel, delay_in_samples);
+
+    //        delay_channel.pushSample(channel, delay_data * feedback);
+    //        channel_data[i] = delay_channel.popSample(channel, delay_in_samples);
+
+    //        
+    //    }
+
+    //    // ..do something to the data...
+    //}
 
     
 
- /*   juce::dsp::AudioBlock<float> block(buffer);
+    //juce::dsp::AudioBlock<float> block(buffer);
+    //for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+    //    auto channel_block = block.getSingleChannelBlock(channel);
+    //    mixer.pushDrySamples(block);
 
-    auto left_block = block.getSingleChannelBlock(0);
+    //    juce::dsp::ProcessContextReplacing<float> context(channel_block);
+
+    //    delay_channel.process(context);
+    //    mixer.mixWetSamples(block);
+    //}
+
+    /*auto left_block = block.getSingleChannelBlock(0);
     auto right_block = block.getSingleChannelBlock(1);
 
     juce::dsp::ProcessContextReplacing<float> left_context(left_block);
@@ -187,7 +235,78 @@ void GlitchBunnyAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
     delay_channel.process(left_context);
     delay_channel.process(right_context);*/
+
+   /* auto params = GetParameterSettings(tree_state);
+    float feedback_gain = juce::Decibels::decibelsToGain(params.feedback);
+
+    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+        WriteDelayBuffer(channel, buffer, params, 1.0f, 1.0f, true);
+        ReadDelayBuffer(channel, buffer, params, 1.f, 1.f, getSampleRate());
+
+        WriteDelayBuffer(channel, buffer, params, m_LastFeedback, feedback_gain, false);
+    }
+
+    m_LastFeedback = feedback_gain;
+
+    m_WritePos += buffer.getNumSamples();
+    m_WritePos %= m_DelayBuffer.getNumSamples();*/
+
+    UpdateParams();
+
+    juce::dsp::AudioBlock<float> block(buffer);
+
+    m_Phaser.process(juce::dsp::ProcessContextReplacing<float>(block));
 }
+
+//void GlitchBunnyAudioProcessor::WriteDelayBuffer(int channel, juce::AudioBuffer<float>& buffer, ParameterSettings& params, const float start_gain, const float end_gain, bool copying) 
+//{
+//    const int buffer_length = buffer.getNumSamples();
+//    const int delay_buffer_length = m_DelayBuffer.getNumSamples();
+//
+//    const float* buffer_data = buffer.getReadPointer(channel);
+//    const float* delay_buffer_data = m_DelayBuffer.getReadPointer(channel);
+//
+//    if (delay_buffer_length > buffer_length + m_WritePos) {
+//        if (copying)
+//            m_DelayBuffer.copyFromWithRamp(channel, m_WritePos, buffer_data, buffer_length, start_gain, end_gain);
+//        else
+//            m_DelayBuffer.addFromWithRamp(channel, m_WritePos, buffer_data, buffer_length, start_gain, end_gain);
+//    }
+//    else {
+//        // fill end of buffer and carry over to beginning
+//        const int remainder = delay_buffer_length - m_WritePos;
+//        const double mid_gain = juce::jmap(float(remainder) / buffer_length, start_gain, end_gain);
+//        if (copying) {
+//            m_DelayBuffer.copyFromWithRamp(channel, m_WritePos, buffer_data, remainder, start_gain, mid_gain);
+//            m_DelayBuffer.copyFromWithRamp(channel, 0, buffer_data + remainder, buffer_length - remainder, mid_gain, end_gain);
+//        }
+//        else {
+//            m_DelayBuffer.addFromWithRamp(channel, m_WritePos, buffer_data, remainder, 1.0f, mid_gain);
+//            m_DelayBuffer.addFromWithRamp(channel, 0, buffer_data + remainder, buffer_length - remainder, mid_gain, end_gain);
+//        }
+//    }
+//}
+//
+//void GlitchBunnyAudioProcessor::ReadDelayBuffer(int channel, juce::AudioBuffer<float>& buffer, ParameterSettings& params, const float start_gain, const float end_gain, const double sample_rate)
+//{
+//    const float* buffer_data = buffer.getReadPointer(channel);
+//    const float* delay_buffer_data = m_DelayBuffer.getReadPointer(channel);
+//
+//    const int buffer_length = buffer.getNumSamples();
+//    const int delay_buffer_length = m_DelayBuffer.getNumSamples();
+//
+//    const int read_pos = static_cast<int>(delay_buffer_length + m_WritePos - (sample_rate * params.time/1000)) % delay_buffer_length;
+//
+//    if (delay_buffer_length > buffer_length + read_pos) {
+//        buffer.addFrom(channel, 0, delay_buffer_data + read_pos, buffer_length);
+//    }
+//    else {
+//        const int remainder = delay_buffer_length - read_pos;
+//
+//        buffer.addFrom(channel, 0, delay_buffer_data + read_pos, remainder);
+//        buffer.addFrom(channel, remainder, delay_buffer_data, buffer_length - remainder);
+//    }
+//}
 
 //==============================================================================
 bool GlitchBunnyAudioProcessor::hasEditor() const
@@ -197,8 +316,8 @@ bool GlitchBunnyAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* GlitchBunnyAudioProcessor::createEditor()
 {
-    //return new GlitchBunnyAudioProcessorEditor (*this);
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new GlitchBunnyAudioProcessorEditor (*this);
+    //return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -222,28 +341,32 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new GlitchBunnyAudioProcessor();
 }
 
-void GlitchBunnyAudioProcessor::UpdateRandDelay() 
-{
-    auto p_settings = GetParameterSettings(tree_state);
-
-    int randomness = p_settings.rand;
-    std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution(-randomness, randomness);
-    int rand = distribution(generator);
-
-    float rand_time = p_settings.time + (rand / 50.f);
-
-    delay_channel.setDelay(rand_time * getSampleRate());
-}
+//void GlitchBunnyAudioProcessor::UpdateRandDelay() 
+//{
+//    auto p_settings = GetParameterSettings(tree_state);
+//
+//    int randomness = p_settings.rand;
+//    std::default_random_engine generator;
+//    std::uniform_int_distribution<int> distribution(-randomness, randomness);
+//    int rand = distribution(generator);
+//
+//    float rand_time = p_settings.time + (rand / 50.f);
+//
+//
+//    mixer.setWetMixProportion(p_settings.mix / 100.0);
+//    delay_channel.setDelay(rand_time * getSampleRate());
+//    delay_channel.UpdateFeedback(p_settings.feedback);
+//}
 
 ParameterSettings GetParameterSettings(const juce::AudioProcessorValueTreeState& tree_state)
 {
     ParameterSettings p_settings;
 
     p_settings.mix = tree_state.getRawParameterValue("Mix")->load();
-    p_settings.time = tree_state.getRawParameterValue("Time")->load();
-    p_settings.feedback = tree_state.getRawParameterValue("Mix")->load();
-    p_settings.rand = tree_state.getRawParameterValue("Randomness")->load();
+    p_settings.rate = tree_state.getRawParameterValue("Rate")->load();
+    p_settings.depth = tree_state.getRawParameterValue("Depth")->load();
+    p_settings.feedback = tree_state.getRawParameterValue("Feedback")->load();
+    p_settings.center_freq = tree_state.getRawParameterValue("Center Freq")->load();
 
     return p_settings;
 }
@@ -252,15 +375,21 @@ juce::AudioProcessorValueTreeState::ParameterLayout GlitchBunnyAudioProcessor::C
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add(std::make_unique<juce::AudioParameterInt>( "Mix", "Mix", 0, 100, 50 ));
+    layout.add(std::make_unique<juce::AudioParameterFloat>( "Mix", "Mix", 
+                                                            juce::NormalisableRange<float>(0.f, 1.f, 0.01f), 
+                                                            0.5f ));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>( "Time", "Time", 
-                                                            juce::NormalisableRange<float>(0.f, MAX_DELAY, 0.001f, 1.f), 
-                                                            1.f ));
+    layout.add(std::make_unique<juce::AudioParameterFloat>( "Rate", "Rate",
+                                                            juce::NormalisableRange<float>(0.f, 99.f, 1.0f),
+                                                            50.f));
 
-    layout.add(std::make_unique<juce::AudioParameterInt>("Feedback", "Feedback", 0, 100, 20));
+    layout.add(std::make_unique<juce::AudioParameterFloat>( "Depth", "Depth",
+                                                            juce::NormalisableRange<float>(0.f, 1.f, 0.1f),
+                                                            0.5f));
 
-    layout.add(std::make_unique<juce::AudioParameterInt>("Randomness", "Randomness", 0, 100, 0));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Feedback", "Feedback", juce::NormalisableRange<float>(-1.f, 1.f, 0.1f), 0.f));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Center Freq", "Center Freq", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f), 1000.f));
 
     return layout;
 }

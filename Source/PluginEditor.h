@@ -78,14 +78,18 @@ private:
 
     KnobLF lf;
 
-    CustomSlider slider_mix, slider_time, slider_feedback, slider_rand;
-    CustomLabel label_mix, label_time, label_feedback, label_rand;
+    CustomSlider slider_mix, slider_rate, slider_depth, slider_feedback, slider_center_freq;
+    CustomLabel label_mix, label_rate, label_depth, label_feedback, label_center_freq;
     
 
     std::vector<juce::Component*> GetGUIComponents();
     std::vector<CustomSlider*> GetSliders();
     void InitLabels();
     void InitSliders();
+
+    using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+
+    Attachment attachment_mix, attachment_rate, attachment_depth, attachment_feedback, attachment_center_freq;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GlitchBunnyAudioProcessorEditor)
 };
